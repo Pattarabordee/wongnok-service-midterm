@@ -13,6 +13,7 @@ type IService interface {
 	UpsertWithClaims(claims model.Claims) (model.User, error)
 	GetByID(claims model.Claims) (model.User, error)
 	GetRecipes(userID string, claims model.Claims) (model.FoodRecipes, error)
+	UpdateNickname(userID string, nickname string) error
 }
 
 type Service struct {
@@ -74,4 +75,12 @@ func (service Service) GetRecipes(userID string, claims model.Claims) (model.Foo
 	foodRecipes = foodRecipes.CalculateAverageRatings()
 
 	return foodRecipes, nil
+}
+
+func (service Service) UpdateNickname(userID string, nickname string) error {
+	// validate nickname, e.g., not empty, etc.
+	if strings.TrimSpace(nickname) == "" {
+		return errors.New("nickname must not be empty")
+	}
+	return service.Repository.UpdateNickname(userID, nickname)
 }

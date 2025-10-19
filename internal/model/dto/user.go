@@ -6,3 +6,7 @@ type UserResponse struct {
 	LastName  string `json:"lastName"`
 	NickName  string `json:"nickName"`
 }
+
+type UpdateNicknameRequest struct {
+	NickName string `json:"nickname" binding:"required,min=2"`
+}
