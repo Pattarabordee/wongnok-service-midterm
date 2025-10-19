@@ -1,0 +1,527 @@
+definitions:
+  dto.CookingDurationResponse:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  dto.DifficultyResponse:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  dto.FoodRecipeRequest:
+    properties:
+      cookingDurationID:
+        type: integer
+      description:
+        type: string
+      difficultyID:
+        type: integer
+      imageURL:
+        type: string
+      ingredient:
+        type: string
+      instruction:
+        type: string
+      name:
+        type: string
+    required:
+    - cookingDurationID
+    - description
+    - difficultyID
+    - ingredient
+    - instruction
+    - name
+    type: object
+  dto.FoodRecipeResponse:
+    properties:
+      averageRating:
+        type: number
+      cookingDuration:
+        $ref: '#/definitions/dto.CookingDurationResponse'
+      createdAt:
+        type: string
+      description:
+        type: string
+      difficulty:
+        $ref: '#/definitions/dto.DifficultyResponse'
+      id:
+        type: integer
+      imageUrl:
+        type: string
+      ingredient:
+        type: string
+      instruction:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserResponse'
+    type: object
+  dto.FoodRecipesResponse:
+    properties:
+      results:
+        items:
+          $ref: '#/definitions/dto.FoodRecipeResponse'
+        type: array
+      total:
+        description: Day 6 add omitempty to avoid null in JSON response ตัว get rating
+          ใช้ด้วยแต่ ไม่เอา total
+        type: integer
+    type: object
+  dto.RatingRequest:
+    properties:
+      score:
+        type: number
+    required:
+    - score
+    type: object
+  dto.RatingResponse:
+    properties:
+      foodRecipeID:
+        type: integer
+      score:
+        type: number
+      userID:
+        type: string
+    type: object
+  dto.StudentRequest:
+    properties:
+      firstName:
+        type: string
+      lastName:
+        type: string
+    required:
+    - firstName
+    - lastName
+    type: object
+  dto.StudentResponse:
+    properties:
+      firstName:
+        type: string
+      id:
+        type: string
+      lastName:
+        type: string
+    type: object
+  dto.UserResponse:
+    properties:
+      firstName:
+        type: string
+      id:
+        type: string
+      lastName:
+        type: string
+    type: object
+host: localhost:8000
+info:
+  contact: {}
+  description: This is an wongnok server.
+  title: Wongnok API
+  version: "1.0"
+paths:
+  /api/v1/food-recipes:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of food recipes with pagination
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FoodRecipesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get a food recipe
+      tags:
+      - food-recipes
+    post:
+      consumes:
+      - application/json
+      description: Create a new food recipe
+      parameters:
+      - description: Recipe data
+        in: body
+        name: recipe
+        required: true
+        schema:
+          $ref: '#/definitions/dto.FoodRecipeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.FoodRecipeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a food recipe
+      tags:
+      - food-recipes
+  /api/v1/food-recipes/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a food recipe by ID
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete food recipe
+      tags:
+      - food-recipes
+    get:
+      consumes:
+      - application/json
+      description: Get a single food recipe by ID
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FoodRecipeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get food recipe by ID
+      tags:
+      - food-recipes
+    put:
+      consumes:
+      - application/json
+      description: Update an existing food recipe
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Recipe data
+        in: body
+        name: recipe
+        required: true
+        schema:
+          $ref: '#/definitions/dto.FoodRecipeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FoodRecipeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update food recipe
+      tags:
+      - food-recipes
+  /api/v1/food-recipes/{id}/ratings:
+    get:
+      consumes:
+      - application/json
+      description: Get ratings for a food recipe by ID
+      parameters:
+      - description: Food Recipe ID
+        in: path
+        name: id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FoodRecipesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get ratings
+      tags:
+      - ratings
+    post:
+      consumes:
+      - application/json
+      description: Create a new rating for a food recipe by ID
+      parameters:
+      - description: Food Recipe ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Rating Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RatingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.RatingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a rating
+      tags:
+      - ratings
+  /api/v1/users/{id}/food-recipes:
+    get:
+      consumes:
+      - application/json
+      description: Get a food recipe by user ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FoodRecipesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a food recipe by user ID
+      tags:
+      - users
+  /students:
+    get:
+      consumes:
+      - application/json
+      description: get student
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a student
+      tags:
+      - students
+    post:
+      consumes:
+      - application/json
+      description: get student
+      parameters:
+      - description: Student Request
+        in: body
+        name: student
+        required: true
+        schema:
+          $ref: '#/definitions/dto.StudentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.StudentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a student
+      tags:
+      - students
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

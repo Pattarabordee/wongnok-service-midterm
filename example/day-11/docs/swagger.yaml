@@ -1,0 +1,105 @@
+definitions:
+  dto.StudentRequest:
+    properties:
+      firstName:
+        type: string
+      lastName:
+        type: string
+    required:
+    - firstName
+    - lastName
+    type: object
+  dto.StudentResponse:
+    properties:
+      firstName:
+        type: string
+      id:
+        type: string
+      lastName:
+        type: string
+    type: object
+host: localhost:8000
+info:
+  contact: {}
+  description: This is an example server.
+  title: Teacher API
+  version: "1.0"
+paths:
+  /students:
+    get:
+      consumes:
+      - application/json
+      description: get student
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a student
+      tags:
+      - students
+    post:
+      consumes:
+      - application/json
+      description: get student
+      parameters:
+      - description: Student Request
+        in: body
+        name: student
+        required: true
+        schema:
+          $ref: '#/definitions/dto.StudentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.StudentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a student
+      tags:
+      - students
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

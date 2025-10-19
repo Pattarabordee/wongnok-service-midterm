@@ -1,0 +1,1 @@
+goose -dir migrations create add_ratings_table sql

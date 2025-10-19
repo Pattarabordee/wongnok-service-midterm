@@ -1,0 +1,19 @@
+CREATE TABLE
+    IF NOT EXISTS teachers (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        age INT NOT NULL,
+        created_at TIMESTAMP NOT NULL,
+        updated_at TIMESTAMP NOT NULL,
+        deleted_at TIMESTAMP
+    );
+
+INSERT INTO
+    teachers (name, age, created_at, updated_at)
+VALUES
+    ('a', 20, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('b', 30, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('c', 40, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    ('d', 10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    ('e', 25, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    ('f', 50, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

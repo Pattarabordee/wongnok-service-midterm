@@ -1,0 +1,1511 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>auth: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">wongnok/internal/auth/handler.go (100.0%)</option>
+				
+				<option value="file1">wongnok/internal/auth/service.go (100.0%)</option>
+				
+				<option value="file2">wongnok/internal/config/auth.go (100.0%)</option>
+				
+				<option value="file3">wongnok/internal/foodrecipe/handler.go (97.5%)</option>
+				
+				<option value="file4">wongnok/internal/foodrecipe/repository.go (90.9%)</option>
+				
+				<option value="file5">wongnok/internal/foodrecipe/service.go (100.0%)</option>
+				
+				<option value="file6">wongnok/internal/helper/auth.go (100.0%)</option>
+				
+				<option value="file7">wongnok/internal/middleware/auth.go (0.0%)</option>
+				
+				<option value="file8">wongnok/internal/model/auth.go (100.0%)</option>
+				
+				<option value="file9">wongnok/internal/model/food_recipe.go (100.0%)</option>
+				
+				<option value="file10">wongnok/internal/model/rating.go (100.0%)</option>
+				
+				<option value="file11">wongnok/internal/model/user.go (100.0%)</option>
+				
+				<option value="file12">wongnok/internal/rating/handler.go (94.3%)</option>
+				
+				<option value="file13">wongnok/internal/rating/repository.go (87.5%)</option>
+				
+				<option value="file14">wongnok/internal/rating/service.go (88.9%)</option>
+				
+				<option value="file15">wongnok/internal/user/handler.go (100.0%)</option>
+				
+				<option value="file16">wongnok/internal/user/repository.go (90.0%)</option>
+				
+				<option value="file17">wongnok/internal/user/service.go (95.8%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package auth
+
+import (
+        "net/http"
+        "wongnok/internal/config"
+        "wongnok/internal/model"
+        "wongnok/internal/model/dto"
+        "wongnok/internal/user"
+
+        "github.com/gin-gonic/gin"
+        "gorm.io/gorm"
+)
+
+type IUserService user.IService
+
+type IHandler interface {
+        Login(ctx *gin.Context)
+        Callback(ctx *gin.Context)
+        Logout(ctx *gin.Context)
+}
+
+type Handler struct {
+        Service     IService
+        UserService IUserService
+}
+
+func NewHandler(db *gorm.DB, kc config.Keycloak, oauth2Conf IOAuth2Config, verifier IOIDCTokenVerifier) IHandler <span class="cov8" title="1">{
+        return &amp;Handler{
+                Service:     NewService(kc, oauth2Conf, verifier),
+                UserService: user.NewService(db),
+        }
+}</span>
+
+func (handler Handler) Login(ctx *gin.Context) <span class="cov8" title="1">{
+        // Generate state
+        state := handler.Service.GenerateState()
+
+        // Collect state in Cookie
+        ctx.SetCookie("state", state, 300, "/", "localhost", false, true)
+
+        // Redirect to Keycloak
+        ctx.Redirect(http.StatusTemporaryRedirect, handler.Service.AuthCodeURL(state))
+}</span>
+
+func (handler Handler) Callback(ctx *gin.Context) <span class="cov8" title="1">{
+        var query dto.KeycloakCallbackQuery
+        ctx.BindQuery(&amp;query)
+
+        // Verify state
+        state, err := ctx.Cookie("state")
+        if err != nil || query.State != state </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid state"})
+                return
+        }</span>
+
+        // Exchange token
+        <span class="cov8" title="1">credential, err := handler.Service.Exchange(ctx.Request.Context(), query.Code)
+        if err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        // Verify
+        <span class="cov8" title="1">idToken, err := handler.Service.VerifyToken(ctx.Request.Context(), credential.IDToken)
+        if err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        // Parse claims
+        <span class="cov8" title="1">var claims model.Claims
+        if err := idToken.Claims(&amp;claims); err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        // Ensure user
+        <span class="cov8" title="1">if _, err := handler.UserService.UpsertWithClaims(claims); err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, credential.ToResponse())</span>
+}
+
+func (handler Handler) Logout(ctx *gin.Context) <span class="cov8" title="1">{
+        var query dto.LogoutQuery
+        ctx.BindQuery(&amp;query)
+
+        // Make logout url
+        logoutURL, err := handler.Service.LogoutURL(query)
+        if err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        // Redirect
+        <span class="cov8" title="1">ctx.Redirect(http.StatusTemporaryRedirect, logoutURL)</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package auth
+
+import (
+        "context"
+        "crypto/rand"
+        "encoding/base64"
+        "fmt"
+        "net/url"
+        "wongnok/internal/config"
+        "wongnok/internal/model"
+        "wongnok/internal/model/dto"
+
+        "github.com/pkg/errors"
+)
+
+type IOAuth2Config config.IOAuth2Config
+type IOIDCTokenVerifier config.IOIDCTokenVerifier
+type IOIDCIDToken config.IOIDCIDToken
+
+type IService interface {
+        GenerateState() string
+        AuthCodeURL(state string) string
+        Exchange(ctx context.Context, code string) (model.Credential, error)
+        VerifyToken(ctx context.Context, token string) (IOIDCIDToken, error)
+        LogoutURL(logoutQuery dto.LogoutQuery) (string, error)
+}
+
+type Service struct {
+        Keycloak     config.Keycloak
+        OAuth2Config IOAuth2Config
+        Verifier     IOIDCTokenVerifier
+}
+
+func NewService(kc config.Keycloak, oauth2Config IOAuth2Config, verifier IOIDCTokenVerifier) IService <span class="cov8" title="1">{
+        return &amp;Service{
+                Keycloak:     kc,
+                OAuth2Config: oauth2Config,
+                Verifier:     verifier,
+        }
+}</span>
+
+func (service Service) GenerateState() string <span class="cov8" title="1">{
+        buffer := make([]byte, 32)
+        rand.Read(buffer)
+        return base64.URLEncoding.EncodeToString(buffer)
+}</span>
+
+func (service Service) AuthCodeURL(state string) string <span class="cov8" title="1">{
+        return service.OAuth2Config.AuthCodeURL(state)
+}</span>
+
+func (service Service) Exchange(ctx context.Context, code string) (model.Credential, error) <span class="cov8" title="1">{
+        token, err := service.OAuth2Config.Exchange(ctx, code)
+        if err != nil </span><span class="cov8" title="1">{
+                return model.Credential{}, errors.Wrap(err, "exchange token")
+        }</span>
+
+        <span class="cov8" title="1">idToken, ok := token.Extra("id_token").(string)
+        if !ok </span><span class="cov8" title="1">{
+                return model.Credential{}, fmt.Errorf("id token is missing")
+        }</span>
+
+        <span class="cov8" title="1">return model.Credential{
+                Token:   token,
+                IDToken: idToken,
+        }, nil</span>
+}
+
+func (service Service) VerifyToken(ctx context.Context, token string) (IOIDCIDToken, error) <span class="cov8" title="1">{
+        idToken, err := service.Verifier.Verify(ctx, token)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrap(err, "verify token")
+        }</span>
+
+        <span class="cov8" title="1">return idToken, nil</span>
+}
+
+func (service Service) LogoutURL(logoutQuery dto.LogoutQuery) (string, error) <span class="cov8" title="1">{
+        uri, err := url.Parse(service.Keycloak.LogoutURL())
+        if err != nil </span><span class="cov8" title="1">{
+                return "", errors.Wrap(err, "parse logout url")
+        }</span>
+
+        <span class="cov8" title="1">query := uri.Query()
+        query.Set("id_token_hint", logoutQuery.IDTokenHint)
+        query.Set("post_logout_redirect_uri", logoutQuery.PostLogoutRedirectURI)
+        uri.RawQuery = query.Encode()
+
+        return uri.String(), nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package config
+
+import (
+        "context"
+        "fmt"
+
+        "github.com/coreos/go-oidc"
+        "golang.org/x/oauth2"
+)
+
+type Keycloak struct {
+        ClientID     string `env:"KEYCLOCK_CLIENT_ID" envDefault:"wongnok"`
+        ClientSecret string `env:"KEYCLOCK_CLIENT_SECRET"`
+        RedirectURL  string `env:"KEYCLOCK_REDIRECT_URL" envDefault:"http://localhost:8000/api/v1/callback"`
+        Realm        string `env:"KEYCLOAK_REALM" envDefault:"pea-devpool-2025"`
+        URL          string `env:"KEYCLOAK_URL" envDefault:"https://sso-dev.odd.works"`
+}
+
+func (kc Keycloak) RealmURL() string <span class="cov8" title="1">{
+        return fmt.Sprintf("%s/realms/%s", kc.URL, kc.Realm)
+}</span>
+
+func (kc Keycloak) LogoutURL() string <span class="cov8" title="1">{
+        return fmt.Sprintf("%s/protocol/openid-connect/logout", kc.RealmURL())
+}</span>
+
+type IOAuth2Config interface {
+        AuthCodeURL(state string, opts ...oauth2.AuthCodeOption) string
+        Exchange(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error)
+}
+
+type IOIDCTokenVerifier interface {
+        Verify(ctx context.Context, rawIDToken string) (*oidc.IDToken, error)
+}
+
+type IOIDCIDToken interface {
+        Claims(v any) error
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package foodrecipe
+
+import (
+        "net/http"
+        "strconv"
+        "wongnok/internal/global"
+        "wongnok/internal/helper"
+        "wongnok/internal/model"
+        "wongnok/internal/model/dto"
+
+        "github.com/gin-gonic/gin"
+        "github.com/go-playground/validator/v10"
+        "github.com/pkg/errors"
+        "gorm.io/gorm"
+)
+
+type IHandler interface {
+        Create(ctx *gin.Context)
+        Get(ctx *gin.Context)
+        GetByID(ctx *gin.Context)
+        Update(ctx *gin.Context)
+        Delete(ctx *gin.Context)
+}
+
+type Handler struct {
+        Service IService
+}
+
+func NewHandler(db *gorm.DB) *Handler <span class="cov8" title="1">{
+        return &amp;Handler{
+                Service: NewService(db),
+        }
+}</span>
+
+// Create godoc
+// @Summary Create a food recipe
+// @Description Create a new food recipe
+// @Tags food-recipes
+// @Accept json
+// @Produce json
+// @Param recipe body dto.FoodRecipeRequest true "Recipe data"
+// @Success 201 {object} dto.FoodRecipeResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 403 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /api/v1/food-recipes [post]
+func (handler Handler) Create(ctx *gin.Context) <span class="cov8" title="1">{
+        claims, err := helper.DecodeClaims(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var request dto.FoodRecipeRequest
+
+        if err := ctx.BindJSON(&amp;request); err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">recipe, err := handler.Service.Create(request, claims)
+        if err != nil </span><span class="cov8" title="1">{
+                statusCode := http.StatusInternalServerError
+                if errors.As(err, &amp;validator.ValidationErrors{}) </span><span class="cov8" title="1">{
+                        statusCode = http.StatusBadRequest
+                }</span>
+
+                <span class="cov8" title="1">if errors.Is(err, global.ErrForbidden) </span><span class="cov8" title="1">{
+                        statusCode = http.StatusForbidden
+                }</span>
+
+                <span class="cov8" title="1">ctx.JSON(statusCode, gin.H{"message": err.Error()})
+                return</span>
+        }
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusCreated, recipe.ToResponse())</span>
+}
+
+// Get godoc
+// @Summary Get a food recipe
+// @Description Get a list of food recipes with pagination
+// @Tags food-recipes
+// @Accept json
+// @Produce json
+// @Param page query int true "Page number" (default 1)
+// @Param limit query int true "Items per page" (default 10)
+// @Param search query string false "Search term"
+// @Success 200 {object} dto.FoodRecipesResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /api/v1/food-recipes [get]
+func (handler Handler) Get(ctx *gin.Context) <span class="cov8" title="1">{
+        var foodRecipeQuery model.FoodRecipeQuery
+        if err := ctx.ShouldBindQuery(&amp;foodRecipeQuery); err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">recipes, total, err := handler.Service.Get(foodRecipeQuery)
+        if err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, recipes.ToResponse(total))</span>
+}
+
+// GetByID godoc
+// @Summary Get food recipe by ID
+// @Description Get a single food recipe by ID
+// @Tags food-recipes
+// @Accept json
+// @Produce json
+// @Param id path int true "Recipe ID"
+// @Success 200 {object} dto.FoodRecipeResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /api/v1/food-recipes/{id} [get]
+func (handler Handler) GetByID(ctx *gin.Context) <span class="cov8" title="1">{
+        var id int
+
+        pathParam := ctx.Param("id")
+        if pathParam != "" </span><span class="cov8" title="1">{
+                if parsed, err := strconv.Atoi(pathParam); err == nil &amp;&amp; parsed &gt; 0 </span><span class="cov8" title="1">{
+                        id = parsed
+                }</span>
+        }
+
+        <span class="cov8" title="1">recipe, err := handler.Service.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Recipe not found"})
+                        return
+                }</span>
+                <span class="cov8" title="1">ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+                return</span>
+        }
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, recipe.ToResponse())</span>
+}
+
+// Update godoc
+// @Summary Update food recipe
+// @Description Update an existing food recipe
+// @Tags food-recipes
+// @Accept json
+// @Produce json
+// @Param id path int true "Recipe ID"
+// @Param recipe body dto.FoodRecipeRequest true "Recipe data"
+// @Success 200 {object} dto.FoodRecipeResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 403 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /api/v1/food-recipes/{id} [put]
+func (handler Handler) Update(ctx *gin.Context) <span class="cov8" title="1">{
+        claims, err := helper.DecodeClaims(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var request dto.FoodRecipeRequest
+        var id int
+
+        if err := ctx.BindJSON(&amp;request); err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">pathParam := ctx.Param("id")
+        if pathParam != "" </span><span class="cov8" title="1">{
+                if parsed, err := strconv.Atoi(pathParam); err == nil &amp;&amp; parsed &gt; 0 </span><span class="cov8" title="1">{
+                        id = parsed
+                }</span>
+        }
+
+        <span class="cov8" title="1">recipe, err := handler.Service.Update(request, id, claims)
+        if err != nil </span><span class="cov8" title="1">{
+                statusCode := http.StatusInternalServerError
+                if errors.As(err, &amp;validator.ValidationErrors{}) </span><span class="cov8" title="1">{
+                        statusCode = http.StatusBadRequest
+                }</span>
+
+                <span class="cov8" title="1">if errors.Is(err, global.ErrForbidden) </span><span class="cov8" title="1">{
+                        statusCode = http.StatusForbidden
+                }</span>
+
+                <span class="cov8" title="1">ctx.JSON(statusCode, gin.H{"message": err.Error()})
+                return</span>
+        }
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, recipe.ToResponse())</span>
+}
+
+// Delete godoc
+// @Summary Delete food recipe
+// @Description Delete a food recipe by ID
+// @Tags food-recipes
+// @Accept json
+// @Produce json
+// @Param id path int true "Recipe ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 403 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /api/v1/food-recipes/{id} [delete]
+func (handler Handler) Delete(ctx *gin.Context) <span class="cov8" title="1">{
+        claims, err := helper.DecodeClaims(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var id int
+
+        pathParam := ctx.Param("id")
+        if pathParam != "" </span><span class="cov8" title="1">{
+                if parsed, err := strconv.Atoi(pathParam); err == nil &amp;&amp; parsed &gt; 0 </span><span class="cov8" title="1">{
+                        id = parsed
+                }</span>
+        }
+
+        <span class="cov8" title="1">if err := handler.Service.Delete(id, claims); err != nil </span><span class="cov8" title="1">{
+                statusCode := http.StatusInternalServerError
+
+                if errors.Is(err, global.ErrForbidden) </span><span class="cov8" title="1">{
+                        statusCode = http.StatusForbidden
+                }</span>
+
+                <span class="cov8" title="1">ctx.JSON(statusCode, gin.H{"message": err.Error()})
+                return</span>
+        }
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, gin.H{"message": "Recipe deleted successfully"})</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package foodrecipe
+
+import (
+        "wongnok/internal/model"
+
+        "gorm.io/gorm"
+        "gorm.io/gorm/clause"
+)
+
+type IRepository interface {
+        Create(recipe *model.FoodRecipe) error
+        Get(foodRecipeQuery model.FoodRecipeQuery) (model.FoodRecipes, error)
+        Count() (int64, error)
+        GetByID(id int) (model.FoodRecipe, error)
+        Update(recipe *model.FoodRecipe) error
+        Delete(id int) error
+}
+
+type Repository struct {
+        DB *gorm.DB
+}
+
+func NewRepository(db *gorm.DB) IRepository <span class="cov8" title="1">{
+        return &amp;Repository{
+                DB: db,
+        }
+}</span>
+
+func (repo Repository) Create(recipe *model.FoodRecipe) error <span class="cov8" title="1">{
+        return repo.DB.Preload(clause.Associations).Create(recipe).First(&amp;recipe).Error
+}</span>
+
+func (repo Repository) Get(query model.FoodRecipeQuery) (model.FoodRecipes, error) <span class="cov8" title="1">{
+        var recipes = make(model.FoodRecipes, 0)
+
+        offset := (query.Page - 1) * query.Limit
+        db := repo.DB.Preload(clause.Associations)
+
+        if query.Search != "" </span><span class="cov8" title="1">{
+                db = db.Where("name LIKE ?", "%"+query.Search+"%").Or("description LIKE ?", "%"+query.Search+"%")
+        }</span>
+
+        <span class="cov8" title="1">if err := db.Order("name asc").Limit(query.Limit).Offset(offset).Find(&amp;recipes).Error; err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return recipes, nil</span>
+}
+
+func (repo Repository) Count() (int64, error) <span class="cov8" title="1">{
+        var count int64
+
+        if err := repo.DB.Model(&amp;model.FoodRecipes{}).Count(&amp;count).Error; err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+
+        <span class="cov8" title="1">return count, nil</span>
+}
+
+func (repo Repository) GetByID(id int) (model.FoodRecipe, error) <span class="cov8" title="1">{
+        var recipe model.FoodRecipe
+
+        if err := repo.DB.Preload(clause.Associations).First(&amp;recipe, id).Error; err != nil </span><span class="cov8" title="1">{
+                return model.FoodRecipe{}, err
+        }</span>
+
+        <span class="cov8" title="1">return recipe, nil</span>
+}
+
+func (repo Repository) Update(recipe *model.FoodRecipe) error <span class="cov8" title="1">{
+        // update
+        if err := repo.DB.Model(&amp;recipe).Updates(recipe).Error; err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return repo.DB.Preload(clause.Associations).First(&amp;recipe, recipe.ID).Error</span>
+}
+
+func (repo Repository) Delete(id int) error <span class="cov8" title="1">{
+        return repo.DB.Delete(&amp;model.FoodRecipes{}, id).Error
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package foodrecipe
+
+import (
+        "wongnok/internal/global"
+        "wongnok/internal/model"
+        "wongnok/internal/model/dto"
+
+        "github.com/go-playground/validator/v10"
+        "github.com/pkg/errors"
+        "gorm.io/gorm"
+)
+
+type IService interface {
+        Create(request dto.FoodRecipeRequest, claims model.Claims) (model.FoodRecipe, error)
+        Get(foodRecipeQuery model.FoodRecipeQuery) (model.FoodRecipes, int64, error)
+        GetByID(id int) (model.FoodRecipe, error)
+        Update(request dto.FoodRecipeRequest, id int, claims model.Claims) (model.FoodRecipe, error)
+        Delete(id int, claims model.Claims) error
+}
+
+type Service struct {
+        Repository IRepository
+}
+
+func NewService(db *gorm.DB) IService <span class="cov8" title="1">{
+        return &amp;Service{
+                Repository: NewRepository(db),
+        }
+}</span>
+
+func (service Service) Create(request dto.FoodRecipeRequest, claims model.Claims) (model.FoodRecipe, error) <span class="cov8" title="1">{
+        validate := validator.New()
+        if err := validate.Struct(request); err != nil </span><span class="cov8" title="1">{
+                return model.FoodRecipe{}, errors.Wrap(err, "request invalid")
+        }</span>
+
+        <span class="cov8" title="1">var recipe model.FoodRecipe
+        recipe = recipe.FromRequest(request, claims)
+
+        if err := service.Repository.Create(&amp;recipe); err != nil </span><span class="cov8" title="1">{
+                return model.FoodRecipe{}, errors.Wrap(err, "create recipe")
+        }</span>
+
+        <span class="cov8" title="1">return recipe, nil</span>
+}
+
+func (service Service) Get(foodRecipeQuery model.FoodRecipeQuery) (model.FoodRecipes, int64, error) <span class="cov8" title="1">{
+        total, err := service.Repository.Count()
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, 0, err
+        }</span>
+
+        <span class="cov8" title="1">results, err := service.Repository.Get(foodRecipeQuery)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, 0, err
+        }</span>
+
+        <span class="cov8" title="1">results = results.CalculateAverageRatings()
+
+        return results, total, nil</span>
+}
+
+func (service Service) GetByID(id int) (model.FoodRecipe, error) <span class="cov8" title="1">{
+        results, err := service.Repository.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return model.FoodRecipe{}, err
+        }</span>
+
+        <span class="cov8" title="1">results = results.CalculateAverageRating()
+
+        return results, nil</span>
+}
+
+func (service Service) Update(request dto.FoodRecipeRequest, id int, claims model.Claims) (model.FoodRecipe, error) <span class="cov8" title="1">{
+        validate := validator.New()
+        if err := validate.Struct(request); err != nil </span><span class="cov8" title="1">{
+                return model.FoodRecipe{}, errors.Wrap(err, "request invalid")
+        }</span>
+
+        // [REFACTOR] เรียกใช้ GetByID ตรงนี้แทน
+        <span class="cov8" title="1">recipe, err := service.Repository.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                // กรณีไม่พบ id ที่ต้องการ update
+                return model.FoodRecipe{}, errors.Wrap(err, "find recipe")
+        }</span>
+
+        <span class="cov8" title="1">if recipe.UserID != claims.ID </span><span class="cov8" title="1">{
+                // กรณี user ที่ login ไม่ตรงกับ user ที่สร้าง recipe
+                return model.FoodRecipe{}, global.ErrForbidden
+        }</span>
+
+        <span class="cov8" title="1">recipe = recipe.FromRequest(request, claims)
+
+        if err := service.Repository.Update(&amp;recipe); err != nil </span><span class="cov8" title="1">{
+                return model.FoodRecipe{}, errors.Wrap(err, "update recipe")
+        }</span>
+
+        <span class="cov8" title="1">recipe = recipe.CalculateAverageRating()
+
+        return recipe, nil</span>
+}
+
+func (service Service) Delete(id int, claims model.Claims) error <span class="cov8" title="1">{
+        recipe, err := service.Repository.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                // กรณีไม่พบ id ที่ต้องการ update
+                return errors.Wrap(err, "find recipe")
+
+        }</span>
+
+        <span class="cov8" title="1">if recipe.UserID != claims.ID </span><span class="cov8" title="1">{
+                // กรณี user ที่ login ไม่ตรงกับ user ที่สร้าง recipe
+                return global.ErrForbidden
+        }</span>
+
+        <span class="cov8" title="1">return service.Repository.Delete(id)</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package helper
+
+import (
+        "net/http"
+        "wongnok/internal/model"
+
+        "github.com/gin-gonic/gin"
+        "github.com/pkg/errors"
+)
+
+func DecodeClaims(ctx *gin.Context) (model.Claims, error) <span class="cov8" title="1">{
+        value, exists := ctx.Get("claims")
+        if !exists </span><span class="cov8" title="1">{
+                return model.Claims{}, errors.New(http.StatusText(http.StatusUnauthorized))
+        }</span>
+
+        <span class="cov8" title="1">claims, ok := value.(model.Claims)
+        if !ok </span><span class="cov8" title="1">{
+                return model.Claims{}, errors.New(http.StatusText(http.StatusUnauthorized))
+        }</span>
+
+        <span class="cov8" title="1">return claims, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package middleware
+
+import (
+        "net/http"
+        "strings"
+        "wongnok/internal/config"
+        "wongnok/internal/model"
+
+        "github.com/gin-gonic/gin"
+)
+
+func Authorize(verifier config.IOIDCTokenVerifier) gin.HandlerFunc <span class="cov0" title="0">{
+        return func(ctx *gin.Context) </span><span class="cov0" title="0">{
+                bearerPrefix := "Bearer "
+
+                tokenWithBearer := ctx.GetHeader("Authorization")
+                if !strings.HasPrefix(tokenWithBearer, bearerPrefix) </span><span class="cov0" title="0">{
+                        ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": http.StatusText(http.StatusUnauthorized)})
+                        return
+                }</span>
+
+                <span class="cov0" title="0">rawToken := strings.TrimPrefix(tokenWithBearer, bearerPrefix)
+                idToken, err := verifier.Verify(ctx.Request.Context(), rawToken)
+                if err != nil </span><span class="cov0" title="0">{
+                        ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+                        return
+                }</span>
+
+                <span class="cov0" title="0">var claims model.Claims
+                if err := idToken.Claims(&amp;claims); err != nil </span><span class="cov0" title="0">{
+                        ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+                        return
+                }</span>
+
+                // Set claims in context
+                <span class="cov0" title="0">ctx.Set("claims", claims)
+
+                ctx.Next()</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package model
+
+import (
+        "wongnok/internal/model/dto"
+
+        "golang.org/x/oauth2"
+)
+
+type Credential struct {
+        *oauth2.Token
+        IDToken string
+}
+
+func (cred Credential) ToResponse() dto.CredentialResponse <span class="cov8" title="1">{
+        return dto.CredentialResponse{
+                AccessToken:  cred.AccessToken,
+                TokenType:    cred.TokenType,
+                RefreshToken: cred.RefreshToken,
+                Expiry:       cred.Expiry,
+                ExpiresIn:    cred.ExpiresIn,
+                IDToken:      cred.IDToken,
+        }
+}</span>
+
+type Claims struct {
+        ID        string `json:"sub" validate:"required"`
+        FirstName string `json:"given_name" validate:"required"`
+        LastName  string `json:"family_name" validate:"required"`
+        NickName  string `json:"nick_name"`
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package model
+
+import (
+        "wongnok/internal/model/dto"
+
+        "gorm.io/gorm"
+)
+
+type FoodRecipe struct {
+        gorm.Model
+        Name              string
+        Description       string
+        Ingredient        string
+        Instruction       string
+        ImageURL          *string
+        CookingDurationID uint
+        CookingDuration   CookingDuration
+        DifficultyID      uint
+        Difficulty        Difficulty
+        Ratings           Ratings
+        AverageRating     float64 `gorm:"-"`
+        UserID            string
+        User              User
+}
+
+func (recipe FoodRecipe) FromRequest(request dto.FoodRecipeRequest, claims Claims) FoodRecipe <span class="cov8" title="1">{
+        return FoodRecipe{
+                Model:             recipe.Model,
+                Name:              request.Name,
+                Description:       request.Description,
+                Ingredient:        request.Ingredient,
+                Instruction:       request.Instruction,
+                ImageURL:          request.ImageURL,
+                CookingDurationID: request.CookingDurationID,
+                DifficultyID:      request.DifficultyID,
+                UserID:            claims.ID,
+        }
+}</span>
+
+func (recipe FoodRecipe) ToResponse() dto.FoodRecipeResponse <span class="cov8" title="1">{
+        return dto.FoodRecipeResponse{
+                ID:          recipe.ID,
+                Name:        recipe.Name,
+                Description: recipe.Description,
+                Ingredient:  recipe.Ingredient,
+                Instruction: recipe.Instruction,
+                ImageURL:    recipe.ImageURL,
+                CookingDuration: dto.CookingDurationResponse{
+                        ID:   recipe.CookingDuration.ID,
+                        Name: recipe.CookingDuration.Name,
+                },
+                Difficulty: dto.DifficultyResponse{
+                        ID:   recipe.Difficulty.ID,
+                        Name: recipe.Difficulty.Name,
+                },
+                AverageRating: recipe.AverageRating,
+                User:          recipe.User.ToResponse(),
+                CreatedAt:     recipe.CreatedAt,
+                UpdatedAt:     recipe.UpdatedAt,
+        }
+}</span>
+
+type FoodRecipes []FoodRecipe
+
+func (recipes FoodRecipes) ToResponse(total int64) dto.FoodRecipesResponse <span class="cov8" title="1">{
+        var results = make([]dto.FoodRecipeResponse, 0)
+
+        for _, recipe := range recipes </span><span class="cov8" title="1">{
+                results = append(results, recipe.ToResponse())
+        }</span>
+
+        <span class="cov8" title="1">return dto.FoodRecipesResponse{
+                Total:   total,
+                Results: results,
+        }</span>
+}
+
+func (recipe FoodRecipe) CalculateAverageRating() FoodRecipe <span class="cov8" title="1">{
+        if len(recipe.Ratings) &gt; 0 </span><span class="cov8" title="1">{
+                var totalRating float64
+                for _, rating := range recipe.Ratings </span><span class="cov8" title="1">{
+                        totalRating += rating.Score
+                }</span>
+                <span class="cov8" title="1">recipe.AverageRating = totalRating / float64(len(recipe.Ratings))</span>
+        } else<span class="cov8" title="1"> {
+                recipe.AverageRating = 0
+        }</span>
+        <span class="cov8" title="1">return recipe</span>
+}
+
+func (recipes FoodRecipes) CalculateAverageRatings() FoodRecipes <span class="cov8" title="1">{
+        for i, recipe := range recipes </span><span class="cov8" title="1">{
+                if len(recipe.Ratings) &gt; 0 </span><span class="cov8" title="1">{
+                        var totalRating float64
+                        for _, rating := range recipe.Ratings </span><span class="cov8" title="1">{
+                                totalRating += rating.Score
+                        }</span>
+                        <span class="cov8" title="1">recipes[i].AverageRating = totalRating / float64(len(recipe.Ratings))</span>
+                } else<span class="cov8" title="1"> {
+                        recipes[i].AverageRating = 0
+                }</span>
+        }
+        <span class="cov8" title="1">return recipes</span>
+}
+
+type FoodRecipeQuery struct {
+        Search string `form:"search"`
+        Page   int    `form:"page" binding:"required,min=1"`  // page number for pagination
+        Limit  int    `form:"limit" binding:"required,min=1"` // number of items per page
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package model
+
+import (
+        "wongnok/internal/model/dto"
+
+        "gorm.io/gorm"
+)
+
+type Rating struct {
+        gorm.Model
+        Score        float64
+        FoodRecipeID uint
+
+        UserID string
+}
+
+func (rating Rating) FromRequest(request dto.RatingRequest) Rating <span class="cov8" title="1">{
+        return Rating{
+                Score: request.Score,
+        }
+}</span>
+
+func (rating Rating) ToResponse() dto.RatingResponse <span class="cov8" title="1">{
+        return dto.RatingResponse{
+                Score:        rating.Score,
+                FoodRecipeID: rating.FoodRecipeID,
+                UserID:       rating.UserID,
+        }
+}</span>
+
+// Ratings คือ "ชุดของ Rating หลาย ๆ อัน"
+// คือเราจะใช้ "slice ของ Rating" เราจึงตั้งชื่อใหม่ให้จำง่ายขึ้น
+// ชื่อใหม่ (alias)
+type Ratings []Rating
+
+func (ratings Ratings) ToResponse() dto.RatingsResponse <span class="cov8" title="1">{
+        var results = make([]dto.RatingResponse, 0)
+
+        for _, rating := range ratings </span><span class="cov8" title="1">{
+                results = append(results, rating.ToResponse())
+        }</span>
+
+        <span class="cov8" title="1">return dto.RatingsResponse{
+                Results: results,
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package model
+
+import (
+        "wongnok/internal/model/dto"
+
+        "gorm.io/gorm"
+)
+
+type User struct {
+        gorm.Model
+        ID        string
+        FirstName string
+        LastName  string
+}
+
+func (user User) FromClaims(claims Claims) User <span class="cov8" title="1">{
+        return User{
+                Model:     user.Model,
+                ID:        claims.ID,
+                FirstName: claims.FirstName,
+                LastName:  claims.LastName,
+        }
+}</span>
+
+func (user User) ToResponse() dto.UserResponse <span class="cov8" title="1">{
+        return dto.UserResponse{
+                ID:        user.ID,
+                FirstName: user.FirstName,
+                LastName:  user.LastName,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package rating
+
+import (
+        "errors"
+        "net/http"
+        "strconv"
+        "wongnok/internal/helper"
+        "wongnok/internal/model/dto"
+
+        "github.com/gin-gonic/gin"
+        "github.com/go-playground/validator/v10"
+        "gorm.io/gorm"
+)
+
+type IHandler interface {
+        Get(ctx *gin.Context)
+        Create(ctx *gin.Context)
+}
+
+type Handler struct {
+        Service IService
+}
+
+func NewHandler(db *gorm.DB) *Handler <span class="cov8" title="1">{
+        return &amp;Handler{
+                Service: NewService(db),
+        }
+}</span>
+
+// Get godoc
+// @Summary Get ratings
+// @Description Get ratings for a food recipe by ID
+// @Tags ratings
+// @Accept json
+// @Produce json
+// @Param id path string false "Food Recipe ID"
+// @Success 200 {object} dto.FoodRecipesResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /api/v1/food-recipes/{id}/ratings [get]
+func (handler Handler) Get(ctx *gin.Context) <span class="cov8" title="1">{
+        var id int
+
+        pathParam := ctx.Param("id")
+        if pathParam != "" </span><span class="cov8" title="1">{
+                if parsed, err := strconv.Atoi(pathParam); err == nil &amp;&amp; parsed &gt; 0 </span><span class="cov8" title="1">{
+                        id = parsed
+                }</span>
+        }
+
+        <span class="cov8" title="1">ratings, err := handler.Service.Get(id)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Rating not found"})
+                        return
+                }</span>
+                <span class="cov0" title="0">ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+                return</span>
+        }
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, ratings.ToResponse())</span>
+}
+
+// Create godoc
+// @Summary Create a rating
+// @Description Create a new rating for a food recipe by ID
+// @Tags ratings
+// @Accept json
+// @Produce json
+// @Param id path string true "Food Recipe ID"
+// @Param request body dto.RatingRequest true "Rating Request"
+// @Success 201 {object} dto.RatingResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /api/v1/food-recipes/{id}/ratings [post]
+func (handler Handler) Create(ctx *gin.Context) <span class="cov8" title="1">{
+        var request dto.RatingRequest
+        var id int
+
+        pathParam := ctx.Param("id")
+        if pathParam != "" </span><span class="cov8" title="1">{
+                if parsed, err := strconv.Atoi(pathParam); err == nil &amp;&amp; parsed &gt; 0 </span><span class="cov8" title="1">{
+                        id = parsed
+                }</span>
+        }
+
+        <span class="cov8" title="1">if err := ctx.BindJSON(&amp;request); err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">claims, err := helper.DecodeClaims(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">rating, err := handler.Service.Create(request, id, claims)
+
+        if err != nil </span><span class="cov8" title="1">{
+                statusCode := http.StatusInternalServerError
+                if errors.As(err, &amp;validator.ValidationErrors{}) </span><span class="cov8" title="1">{
+                        statusCode = http.StatusBadRequest
+                }</span>
+
+                <span class="cov8" title="1">ctx.JSON(statusCode, gin.H{"message": err.Error()})
+                return</span>
+        }
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusCreated, rating.ToResponse())</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package rating
+
+import (
+        "wongnok/internal/model"
+
+        "gorm.io/gorm"
+)
+
+type IRepository interface {
+        Get(recipeID int) (model.Ratings, error)
+        Create(rating *model.Rating) error
+}
+
+type Repository struct {
+        DB *gorm.DB
+}
+
+func NewRepository(db *gorm.DB) IRepository <span class="cov8" title="1">{
+        return &amp;Repository{
+                DB: db,
+        }
+}</span>
+
+func (repo Repository) Get(recipeID int) (model.Ratings, error) <span class="cov8" title="1">{
+        var ratings model.Ratings
+
+        if err := repo.DB.Where("food_recipe_id = ?", recipeID).Find(&amp;ratings).Error; err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return ratings, nil</span>
+}
+
+func (repo Repository) Create(rating *model.Rating) error <span class="cov8" title="1">{
+        if err := repo.DB.Create(rating).First(&amp;rating).Error; err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package rating
+
+import (
+        "wongnok/internal/model"
+        "wongnok/internal/model/dto"
+        "wongnok/internal/user"
+
+        "github.com/go-playground/validator/v10"
+        "github.com/pkg/errors"
+        "gorm.io/gorm"
+)
+
+type IUserService user.IService
+
+type IService interface {
+        Get(recipeID int) (model.Ratings, error)
+
+        Create(request dto.RatingRequest, recipeID int, claims model.Claims) (model.Rating, error)
+}
+
+type Service struct {
+        Repository  IRepository
+        UserService IUserService
+}
+
+func NewService(db *gorm.DB) IService <span class="cov8" title="1">{
+        return &amp;Service{
+                Repository:  NewRepository(db),
+                UserService: user.NewService(db),
+        }
+}</span>
+
+func (service Service) Get(recipeID int) (model.Ratings, error) <span class="cov8" title="1">{
+        ratings, err := service.Repository.Get(recipeID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return ratings, nil</span>
+}
+
+func (service Service) Create(request dto.RatingRequest, recipeID int, claims model.Claims) (model.Rating, error) <span class="cov8" title="1">{
+        validate := validator.New()
+        if err := validate.Struct(request); err != nil </span><span class="cov8" title="1">{
+                return model.Rating{}, errors.Wrap(err, "request invalid")
+        }</span>
+
+        <span class="cov8" title="1">userID, err := service.UserService.GetByID(claims)
+        if err != nil </span><span class="cov0" title="0">{
+                return model.Rating{}, errors.Wrap(err, "create rating")
+        }</span>
+
+        <span class="cov8" title="1">var rating model.Rating
+        rating = rating.FromRequest(request)
+        rating.FoodRecipeID = uint(recipeID)
+
+        rating.UserID = userID.ID
+
+        if err := service.Repository.Create(&amp;rating); err != nil </span><span class="cov0" title="0">{
+                return model.Rating{}, errors.Wrap(err, "create rating")
+        }</span>
+
+        <span class="cov8" title="1">return rating, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file15" style="display: none">package user
+
+import (
+        "net/http"
+        "wongnok/internal/helper"
+
+        "github.com/gin-gonic/gin"
+        "gorm.io/gorm"
+)
+
+type IHandler interface {
+        GetRecipes(ctx *gin.Context)
+}
+
+type Handler struct {
+        Service IService
+}
+
+func NewHandler(db *gorm.DB) *Handler <span class="cov8" title="1">{
+        return &amp;Handler{
+                Service: NewService(db),
+        }
+}</span>
+
+// GetRecipes godoc
+// @Summary Get a food recipe by user ID
+// @Description Get a food recipe by user ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} dto.FoodRecipesResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /api/v1/users/{id}/food-recipes [get]
+func (handler Handler) GetRecipes(ctx *gin.Context) <span class="cov8" title="1">{
+        userID := ctx.Param("id")
+
+        claims, err := helper.DecodeClaims(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">recipes, err := handler.Service.GetRecipes(userID, claims)
+        if err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, recipes.ToResponse(int64(len(recipes))))</span>
+}
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">package user
+
+import (
+        "wongnok/internal/model"
+
+        "gorm.io/gorm"
+        "gorm.io/gorm/clause"
+)
+
+type IRepository interface {
+        GetByID(id string) (model.User, error)
+        Upsert(user *model.User) error
+        GetRecipes(userID string) (model.FoodRecipes, error)
+}
+
+type Repository struct {
+        DB *gorm.DB
+}
+
+func NewRepository(db *gorm.DB) IRepository <span class="cov8" title="1">{
+        return &amp;Repository{
+                DB: db,
+        }
+}</span>
+
+func (repo Repository) GetByID(id string) (model.User, error) <span class="cov8" title="1">{
+        var user model.User
+
+        if err := repo.DB.First(&amp;user, "id = ?", id).Error; err != nil </span><span class="cov8" title="1">{
+                return user, err
+        }</span>
+
+        <span class="cov8" title="1">return user, nil</span>
+}
+
+func (repo Repository) Upsert(user *model.User) error <span class="cov8" title="1">{
+        return repo.DB.Save(user).Error
+}</span>
+
+func (repo Repository) GetRecipes(userID string) (model.FoodRecipes, error) <span class="cov8" title="1">{
+        var recipes model.FoodRecipes
+
+        if err := repo.DB.Preload(clause.Associations).Find(&amp;recipes, "user_id = ?", userID).Error; err != nil </span><span class="cov0" title="0">{
+                return model.FoodRecipes{}, err
+        }</span>
+
+        <span class="cov8" title="1">return recipes, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file17" style="display: none">package user
+
+import (
+        "strings"
+        "wongnok/internal/model"
+
+        "github.com/go-playground/validator/v10"
+        "github.com/pkg/errors"
+        "gorm.io/gorm"
+)
+
+type IService interface {
+        UpsertWithClaims(claims model.Claims) (model.User, error)
+        GetByID(claims model.Claims) (model.User, error)
+        GetRecipes(userID string, claims model.Claims) (model.FoodRecipes, error)
+}
+
+type Service struct {
+        Repository IRepository
+}
+
+func NewService(db *gorm.DB) IService <span class="cov8" title="1">{
+        return &amp;Service{
+                Repository: NewRepository(db),
+        }
+}</span>
+
+func (service Service) UpsertWithClaims(claims model.Claims) (model.User, error) <span class="cov8" title="1">{
+        validate := validator.New()
+        if err := validate.Struct(claims); err != nil </span><span class="cov8" title="1">{
+                return model.User{}, errors.Wrap(err, "claims invalid")
+        }</span>
+
+        <span class="cov8" title="1">user, err := service.Repository.GetByID(claims.ID)
+        if err != nil &amp;&amp; !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                return model.User{}, errors.Wrap(err, "find user")
+        }</span>
+
+        // Set claims information to user model
+        <span class="cov8" title="1">user = user.FromClaims(claims)
+
+        if err := service.Repository.Upsert(&amp;user); err != nil </span><span class="cov8" title="1">{
+                return model.User{}, errors.Wrap(err, "upsert user")
+        }</span>
+
+        <span class="cov8" title="1">return user, nil</span>
+}
+
+func (service Service) GetByID(claims model.Claims) (model.User, error) <span class="cov8" title="1">{
+
+        user, err := service.Repository.GetByID(claims.ID)
+        if err != nil &amp;&amp; !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                return model.User{}, errors.Wrap(err, "find user")
+        }</span>
+
+        <span class="cov8" title="1">return user, nil</span>
+}
+
+func (service Service) GetRecipes(userID string, claims model.Claims) (model.FoodRecipes, error) <span class="cov8" title="1">{
+
+        if strings.ToLower(userID) == "self" </span><span class="cov0" title="0">{
+                userID = claims.ID
+        }</span>
+
+        <span class="cov8" title="1">if _, err := service.Repository.GetByID(claims.ID); err != nil </span><span class="cov8" title="1">{
+                return model.FoodRecipes{}, errors.Wrap(err, "find user")
+        }</span>
+
+        <span class="cov8" title="1">foodRecipes, err := service.Repository.GetRecipes(userID)
+        if err != nil &amp;&amp; !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                return model.FoodRecipes{}, errors.Wrap(err, "get recipes")
+        }</span>
+
+        <span class="cov8" title="1">foodRecipes = foodRecipes.CalculateAverageRatings()
+
+        return foodRecipes, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
