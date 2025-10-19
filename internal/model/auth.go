@@ -23,8 +23,9 @@ func (cred Credential) ToResponse() dto.CredentialResponse {
 }
 
 type Claims struct {
-	ID        string `json:"sub" validate:"required"`
-	FirstName string `json:"given_name" validate:"required"`
-	LastName  string `json:"family_name" validate:"required"`
-	NickName  string `json:"nick_name"`
+	ID              string `json:"sub" validate:"required"`
+	FirstName       string `json:"given_name" validate:"required"`
+	LastName        string `json:"family_name" validate:"required"`
+	NickName        string `json:"nick_name"`
+	ImageProfileUrl string `json:"image_profile_url"`
 }

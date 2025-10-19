@@ -11,7 +11,7 @@ type IRepository interface {
 	GetByID(id string) (model.User, error)
 	Upsert(user *model.User) error
 	GetRecipes(userID string) (model.FoodRecipes, error)
-	UpdateNickname(userID string, nickname string) error
+	UpdateFields(userID string, fields map[string]interface{}) error
 }
 
 type Repository struct {
@@ -48,13 +48,6 @@ func (repo Repository) GetRecipes(userID string) (model.FoodRecipes, error) {
 	return recipes, nil
 }
 
-func (repo Repository) UpdateNickname(userID string, nickname string) error {
-	result := repo.DB.Model(&model.User{}).Where("id = ?", userID).Update("nick_name", nickname)
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
-	}
-	return nil
+func (repo Repository) UpdateFields(userID string, fields map[string]interface{}) error {
+	return repo.DB.Model(&model.User{}).Where("id = ?", userID).Updates(fields).Error
 }

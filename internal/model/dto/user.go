@@ -1,12 +1,14 @@
 package dto
 
 type UserResponse struct {
-	ID        string `json:"id"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	NickName  string `json:"nickName"`
+	ID              string `json:"id"`
+	FirstName       string `json:"firstName"`
+	LastName        string `json:"lastName"`
+	NickName        string `json:"nickName"`
+	ImageProfileUrl string `json:"imageProfileUrl"`
 }
 
-type UpdateNicknameRequest struct {
-	NickName string `json:"nickname" binding:"required,min=2"`
+type UpdateProfileRequest struct {
+	NickName        string `json:"nickname,omitempty"`
+	ImageProfileUrl string `json:"imageProfileUrl,omitempty"`
 }

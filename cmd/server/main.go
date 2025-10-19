@@ -126,8 +126,7 @@ func main() {
 
 	// User
 	group.GET("/users/:id/food-recipes", middleware.Authorize(verifierSkipClientIDCheck), userHandler.GetRecipes)
-	group.PATCH("/users/:id/nickname", middleware.Authorize(verifierSkipClientIDCheck), userHandler.UpdateNickname)
-	group.PATCH("/users/self/nickname", middleware.Authorize(verifierSkipClientIDCheck), userHandler.UpdateNickname)
+	group.PATCH("/users/self/profile", middleware.Authorize(verifierSkipClientIDCheck), userHandler.UpdateProfile)
 
 	if err := router.Run(":8000"); err != nil {
 		log.Fatal("Server error:", err)

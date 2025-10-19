@@ -56,25 +56,24 @@ func (handler Handler) GetRecipes(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, recipes.ToResponse(int64(len(recipes))))
 }
 
-func (handler Handler) UpdateNickname(ctx *gin.Context) {
+func (handler Handler) UpdateProfile(ctx *gin.Context) {
 	claims, err := helper.DecodeClaims(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
 		return
 	}
-	var req dto.UpdateNicknameRequest
+
+	var req dto.UpdateProfileRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	err = handler.Service.UpdateNickname(claims.ID, req.NickName)
+
+	err = handler.Service.UpdateProfile(claims.ID, req)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
-			return
-		}
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "Nickname updated successfully"})
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Profile updated successfully"})
 }

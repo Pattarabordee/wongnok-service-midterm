@@ -3,6 +3,7 @@ package user
 import (
 	"strings"
 	"wongnok/internal/model"
+	"wongnok/internal/model/dto"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
@@ -13,7 +14,7 @@ type IService interface {
 	UpsertWithClaims(claims model.Claims) (model.User, error)
 	GetByID(claims model.Claims) (model.User, error)
 	GetRecipes(userID string, claims model.Claims) (model.FoodRecipes, error)
-	UpdateNickname(userID string, nickname string) error
+	UpdateProfile(userID string, req dto.UpdateProfileRequest) error
 }
 
 type Service struct {
@@ -77,10 +78,17 @@ func (service Service) GetRecipes(userID string, claims model.Claims) (model.Foo
 	return foodRecipes, nil
 }
 
-func (service Service) UpdateNickname(userID string, nickname string) error {
-	// validate nickname, e.g., not empty, etc.
-	if strings.TrimSpace(nickname) == "" {
-		return errors.New("nickname must not be empty")
+func (service Service) UpdateProfile(userID string, req dto.UpdateProfileRequest) error {
+	updateData := map[string]interface{}{}
+	if req.NickName != "" {
+		updateData["nick_name"] = req.NickName
 	}
-	return service.Repository.UpdateNickname(userID, nickname)
+	if req.ImageProfileUrl != "" {
+		updateData["image_profile_url"] = req.ImageProfileUrl
+	}
+	if len(updateData) == 0 {
+		return errors.New("no update fields")
+	}
+	result := service.Repository.UpdateFields(userID, updateData)
+	return result
 }
