@@ -119,6 +119,11 @@ func main() {
 	group.GET("/food-recipes/:id/ratings", ratingHandler.Get)
 	group.POST("/food-recipes/:id/ratings", middleware.Authorize(verifierSkipClientIDCheck), ratingHandler.Create)
 
+	// Love
+	group.POST("/food-recipes/:id/love", middleware.Authorize(verifierSkipClientIDCheck), foodRecipeHandler.LikeRecipe)
+	group.DELETE("/food-recipes/:id/love", middleware.Authorize(verifierSkipClientIDCheck), foodRecipeHandler.UnlikeRecipe)
+	group.GET("/food-recipes/love", middleware.Authorize(verifierSkipClientIDCheck), foodRecipeHandler.GetLovedRecipes)
+
 	// Auth
 	group.GET("/login", authHandler.Login)
 	group.GET("/callback", authHandler.Callback)
@@ -127,6 +132,7 @@ func main() {
 	// User
 	group.GET("/users/:id/food-recipes", middleware.Authorize(verifierSkipClientIDCheck), userHandler.GetRecipes)
 	group.PATCH("/users/self/profile", middleware.Authorize(verifierSkipClientIDCheck), userHandler.UpdateProfile)
+	group.GET("/users/self/profile", middleware.Authorize(verifierSkipClientIDCheck), userHandler.GetProfile)
 
 	if err := router.Run(":8000"); err != nil {
 		log.Fatal("Server error:", err)

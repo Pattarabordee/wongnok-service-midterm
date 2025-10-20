@@ -16,6 +16,9 @@ type IService interface {
 	GetByID(id int) (model.FoodRecipe, error)
 	Update(request dto.FoodRecipeRequest, id int, claims model.Claims) (model.FoodRecipe, error)
 	Delete(id int, claims model.Claims) error
+	LikeRecipe(userID string, recipeID int) error
+	UnlikeRecipe(userID string, recipeID int) error
+	GetLovedRecipes(userID string) ([]model.FoodRecipe, error)
 }
 
 type Service struct {
@@ -113,4 +116,23 @@ func (service Service) Delete(id int, claims model.Claims) error {
 	}
 
 	return service.Repository.Delete(id)
+}
+
+func (s Service) LikeRecipe(userID string, recipeID int) error {
+	hasLoved, err := s.Repository.HasUserLoved(userID, recipeID)
+	if err != nil {
+		return err
+	}
+	if hasLoved {
+		return errors.New("already loved")
+	}
+	return s.Repository.LikeRecipe(userID, recipeID)
+}
+
+func (s Service) UnlikeRecipe(userID string, recipeID int) error {
+	return s.Repository.UnlikeRecipe(userID, recipeID)
+}
+
+func (s Service) GetLovedRecipes(userID string) ([]model.FoodRecipe, error) {
+	return s.Repository.GetLovedRecipesByUser(userID)
 }

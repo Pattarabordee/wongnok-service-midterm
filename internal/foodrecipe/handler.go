@@ -20,6 +20,9 @@ type IHandler interface {
 	GetByID(ctx *gin.Context)
 	Update(ctx *gin.Context)
 	Delete(ctx *gin.Context)
+	LikeRecipe(ctx *gin.Context)
+	UnlikeRecipe(ctx *gin.Context)
+	GetLovedRecipes(ctx *gin.Context)
 }
 
 type Handler struct {
@@ -236,4 +239,64 @@ func (handler Handler) Delete(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Recipe deleted successfully"})
+}
+
+func (h Handler) LikeRecipe(ctx *gin.Context) {
+	claims, err := helper.DecodeClaims(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+		return
+	}
+	userID := claims.ID
+
+	recipeID, err := strconv.Atoi(ctx.Param("id")) // <<< แก้ตรงนี้
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid recipe ID"})
+		return
+	}
+
+	err = h.Service.LikeRecipe(userID, recipeID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "Recipe liked successfully"})
+}
+
+func (h Handler) UnlikeRecipe(ctx *gin.Context) {
+	claims, err := helper.DecodeClaims(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+		return
+	}
+	userID := claims.ID
+
+	recipeID, err := strconv.Atoi(ctx.Param("id")) // <<< แก้ตรงนี้เช่นกัน
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid recipe ID"})
+		return
+	}
+
+	err = h.Service.UnlikeRecipe(userID, recipeID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "Recipe unliked successfully"})
+}
+
+func (h Handler) GetLovedRecipes(ctx *gin.Context) {
+	claims, err := helper.DecodeClaims(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+		return
+	}
+	userID := claims.ID
+
+	recipes, err := h.Service.GetLovedRecipes(userID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, recipes) // ควร map เป็น DTO ถ้าต้องการรูปแบบเฉพาะ
 }

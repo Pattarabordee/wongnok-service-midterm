@@ -15,6 +15,7 @@ type IService interface {
 	GetByID(claims model.Claims) (model.User, error)
 	GetRecipes(userID string, claims model.Claims) (model.FoodRecipes, error)
 	UpdateProfile(userID string, req dto.UpdateProfileRequest) error
+	GetProfile(userID string) (dto.UserProfileResponse, error)
 }
 
 type Service struct {
@@ -91,4 +92,16 @@ func (service Service) UpdateProfile(userID string, req dto.UpdateProfileRequest
 	}
 	result := service.Repository.UpdateFields(userID, updateData)
 	return result
+}
+
+func (service Service) GetProfile(userID string) (dto.UserProfileResponse, error) {
+	user, err := service.Repository.GetByID(userID)
+	if err != nil {
+		return dto.UserProfileResponse{}, err
+	}
+	return dto.UserProfileResponse{
+		ID:              user.ID,
+		NickName:        user.NickName,
+		ImageProfileUrl: user.ImageProfileUrl,
+	}, nil
 }

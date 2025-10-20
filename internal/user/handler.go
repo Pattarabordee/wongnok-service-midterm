@@ -12,7 +12,8 @@ import (
 
 type IHandler interface {
 	GetRecipes(ctx *gin.Context)
-	UpdateNickname(ctx *gin.Context)
+	UpdateProfile(ctx *gin.Context)
+	GetProfile(ctx *gin.Context)
 }
 
 type Handler struct {
@@ -76,4 +77,18 @@ func (handler Handler) UpdateProfile(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Profile updated successfully"})
+}
+
+func (handler Handler) GetProfile(ctx *gin.Context) {
+	claims, err := helper.DecodeClaims(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+		return
+	}
+	profile, err := handler.Service.GetProfile(claims.ID)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+		return
+	}
+	ctx.JSON(http.StatusOK, profile)
 }

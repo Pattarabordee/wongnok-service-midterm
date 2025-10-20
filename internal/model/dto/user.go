@@ -12,3 +12,9 @@ type UpdateProfileRequest struct {
 	NickName        string `json:"nickname,omitempty"`
 	ImageProfileUrl string `json:"imageProfileUrl,omitempty"`
 }
+
+type UserProfileResponse struct {
+	ID              string `json:"id"`
+	NickName        string `json:"nickname"`
+	ImageProfileUrl string `json:"imageProfileUrl"`
+}
